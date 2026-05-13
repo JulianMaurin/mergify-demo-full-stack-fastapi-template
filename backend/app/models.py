@@ -127,7 +127,7 @@ class Comment(CommentBase, table=True):
         sa_type=DateTime(timezone=True),  # type: ignore
     )
     item_id: uuid.UUID = Field(
-        foreign_key="item.id", nullable=False, ondelete="CASCADE"
+        foreign_key="item.id", nullable=False, ondelete="CASCADE", index=True
     )
     author_id: uuid.UUID = Field(
         foreign_key="user.id", nullable=False, ondelete="CASCADE"
