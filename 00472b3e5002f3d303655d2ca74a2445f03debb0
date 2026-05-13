@@ -1,0 +1,1 @@
+add follow-up migration creating ix_comment_item_id; list endpoint filters by item_id, so the index is needed once a non-trivial number of comments exist
