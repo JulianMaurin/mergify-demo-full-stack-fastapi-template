@@ -9,6 +9,25 @@ export type Body_login_login_access_token = {
     client_secret?: (string | null);
 };
 
+export type CommentCreate = {
+    content: string;
+};
+
+export type CommentPublic = {
+    content: string;
+    id: string;
+    item_id: string;
+    author_id: string;
+    author_full_name?: (string | null);
+    author_email: string;
+    created_at?: (string | null);
+};
+
+export type CommentsPublic = {
+    data: Array<CommentPublic>;
+    count: number;
+};
+
 export type HTTPValidationError = {
     detail?: Array<ValidationError>;
 };
@@ -144,6 +163,19 @@ export type ItemsDeleteItemData = {
 };
 
 export type ItemsDeleteItemResponse = (Message);
+
+export type ItemsReadItemCommentsData = {
+    id: string;
+};
+
+export type ItemsReadItemCommentsResponse = (CommentsPublic);
+
+export type ItemsCreateItemCommentData = {
+    id: string;
+    requestBody: CommentCreate;
+};
+
+export type ItemsCreateItemCommentResponse = (CommentPublic);
 
 export type LoginLoginAccessTokenData = {
     formData: Body_login_login_access_token;
