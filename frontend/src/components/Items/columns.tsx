@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router"
 import type { ColumnDef } from "@tanstack/react-table"
 import { Check, Copy } from "lucide-react"
 
@@ -41,7 +42,13 @@ export const columns: ColumnDef<ItemPublic>[] = [
     accessorKey: "title",
     header: "Title",
     cell: ({ row }) => (
-      <span className="font-medium">{row.original.title}</span>
+      <Link
+        to="/items/$id"
+        params={{ id: row.original.id }}
+        className="font-medium hover:underline"
+      >
+        {row.original.title}
+      </Link>
     ),
   },
   {
