@@ -108,6 +108,46 @@ class ItemsPublic(SQLModel):
     count: int
 
 
+# Shared properties
+class CommentBase(SQLModel):
+    content: str = Field(min_length=1, max_length=1000)
+
+
+# Properties to receive on comment creation
+class CommentCreate(CommentBase):
+    pass
+
+
+# Database model, database table inferred from class name
+class Comment(CommentBase, table=True):
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    created_at: datetime | None = Field(
+        default_factory=get_datetime_utc,
+        sa_type=DateTime(timezone=True),  # type: ignore
+    )
+    item_id: uuid.UUID = Field(
+        foreign_key="item.id", nullable=False, ondelete="CASCADE"
+    )
+    author_id: uuid.UUID = Field(
+        foreign_key="user.id", nullable=False, ondelete="CASCADE"
+    )
+    author_name: str | None = Field(default=None, max_length=255)
+
+
+# Properties to return via API, id is always required
+class CommentPublic(CommentBase):
+    id: uuid.UUID
+    item_id: uuid.UUID
+    author_id: uuid.UUID
+    author_name: str | None = None
+    created_at: datetime | None = None
+
+
+class CommentsPublic(SQLModel):
+    data: list[CommentPublic]
+    count: int
+
+
 # Generic message
 class Message(SQLModel):
     message: str
