@@ -162,3 +162,91 @@ def test_delete_item_not_enough_permissions(
     assert response.status_code == 403
     content = response.json()
     assert content["detail"] == "Not enough permissions"
+
+
+def test_create_item_comment(
+    client: TestClient, superuser_token_headers: dict[str, str], db: Session
+) -> None:
+    item = create_random_item(db)
+    data = {"content": "Looks good"}
+    response = client.post(
+        f"{settings.API_V1_STR}/items/{item.id}/comments",
+        headers=superuser_token_headers,
+        json=data,
+    )
+    assert response.status_code == 200
+    content = response.json()
+    assert content["content"] == data["content"]
+    assert content["item_id"] == str(item.id)
+    assert "id" in content
+    assert "author_id" in content
+    assert "created_at" in content
+    assert content["author_name"]
+
+
+def test_create_item_comment_not_found(
+    client: TestClient, superuser_token_headers: dict[str, str]
+) -> None:
+    response = client.post(
+        f"{settings.API_V1_STR}/items/{uuid.uuid4()}/comments",
+        headers=superuser_token_headers,
+        json={"content": "hi"},
+    )
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Item not found"
+
+
+def test_create_item_comment_not_enough_permissions(
+    client: TestClient, normal_user_token_headers: dict[str, str], db: Session
+) -> None:
+    item = create_random_item(db)
+    response = client.post(
+        f"{settings.API_V1_STR}/items/{item.id}/comments",
+        headers=normal_user_token_headers,
+        json={"content": "hi"},
+    )
+    assert response.status_code == 403
+    assert response.json()["detail"] == "Not enough permissions"
+
+
+def test_read_item_comments(
+    client: TestClient, superuser_token_headers: dict[str, str], db: Session
+) -> None:
+    item = create_random_item(db)
+    for content in ("first", "second"):
+        client.post(
+            f"{settings.API_V1_STR}/items/{item.id}/comments",
+            headers=superuser_token_headers,
+            json={"content": content},
+        )
+    response = client.get(
+        f"{settings.API_V1_STR}/items/{item.id}/comments",
+        headers=superuser_token_headers,
+    )
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["count"] == 2
+    assert [c["content"] for c in payload["data"]] == ["second", "first"]
+
+
+def test_read_item_comments_not_found(
+    client: TestClient, superuser_token_headers: dict[str, str]
+) -> None:
+    response = client.get(
+        f"{settings.API_V1_STR}/items/{uuid.uuid4()}/comments",
+        headers=superuser_token_headers,
+    )
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Item not found"
+
+
+def test_read_item_comments_not_enough_permissions(
+    client: TestClient, normal_user_token_headers: dict[str, str], db: Session
+) -> None:
+    item = create_random_item(db)
+    response = client.get(
+        f"{settings.API_V1_STR}/items/{item.id}/comments",
+        headers=normal_user_token_headers,
+    )
+    assert response.status_code == 403
+    assert response.json()["detail"] == "Not enough permissions"

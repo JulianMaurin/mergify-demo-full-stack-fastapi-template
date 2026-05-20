@@ -5,7 +5,18 @@ from fastapi import APIRouter, HTTPException
 from sqlmodel import col, func, select
 
 from app.api.deps import CurrentUser, SessionDep
-from app.models import Item, ItemCreate, ItemPublic, ItemsPublic, ItemUpdate, Message
+from app.models import (
+    Comment,
+    CommentCreate,
+    CommentPublic,
+    CommentsPublic,
+    Item,
+    ItemCreate,
+    ItemPublic,
+    ItemsPublic,
+    ItemUpdate,
+    Message,
+)
 
 router = APIRouter(prefix="/items", tags=["items"])
 
@@ -111,3 +122,57 @@ def delete_item(
     session.delete(item)
     session.commit()
     return Message(message="Item deleted successfully")
+
+
+def _comment_to_public(comment: Comment) -> CommentPublic:
+    author_name = None
+    if comment.author is not None:
+        author_name = comment.author.full_name or comment.author.email
+    return CommentPublic.model_validate(comment, update={"author_name": author_name})
+
+
+@router.get("/{id}/comments", response_model=CommentsPublic)
+def read_item_comments(
+    session: SessionDep, current_user: CurrentUser, id: uuid.UUID
+) -> Any:
+    """
+    List comments for an item.
+    """
+    item = session.get(Item, id)
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+    if not current_user.is_superuser and (item.owner_id != current_user.id):
+        raise HTTPException(status_code=403, detail="Not enough permissions")
+    statement = (
+        select(Comment)
+        .where(Comment.item_id == id)
+        .order_by(col(Comment.created_at).desc())
+    )
+    comments = session.exec(statement).all()
+    data = [_comment_to_public(c) for c in comments]
+    return CommentsPublic(data=data, count=len(data))
+
+
+@router.post("/{id}/comments", response_model=CommentPublic)
+def create_item_comment(
+    *,
+    session: SessionDep,
+    current_user: CurrentUser,
+    id: uuid.UUID,
+    comment_in: CommentCreate,
+) -> Any:
+    """
+    Post a comment on an item.
+    """
+    item = session.get(Item, id)
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+    if not current_user.is_superuser and (item.owner_id != current_user.id):
+        raise HTTPException(status_code=403, detail="Not enough permissions")
+    comment = Comment.model_validate(
+        comment_in, update={"item_id": id, "author_id": current_user.id}
+    )
+    session.add(comment)
+    session.commit()
+    session.refresh(comment)
+    return _comment_to_public(comment)
