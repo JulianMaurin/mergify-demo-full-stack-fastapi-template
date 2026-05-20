@@ -54,6 +54,9 @@ class User(UserBase, table=True):
         sa_type=DateTime(timezone=True),  # type: ignore
     )
     items: list["Item"] = Relationship(back_populates="owner", cascade_delete=True)
+    comments: list["Comment"] = Relationship(
+        back_populates="author", cascade_delete=True
+    )
 
 
 # Properties to return via API, id is always required
@@ -94,6 +97,9 @@ class Item(ItemBase, table=True):
         foreign_key="user.id", nullable=False, ondelete="CASCADE"
     )
     owner: User | None = Relationship(back_populates="items")
+    comments: list["Comment"] = Relationship(
+        back_populates="item", cascade_delete=True
+    )
 
 
 # Properties to return via API, id is always required
@@ -105,6 +111,47 @@ class ItemPublic(ItemBase):
 
 class ItemsPublic(SQLModel):
     data: list[ItemPublic]
+    count: int
+
+
+# Shared properties
+class CommentBase(SQLModel):
+    content: str = Field(min_length=1, max_length=1000)
+
+
+# Properties to receive on comment creation
+class CommentCreate(CommentBase):
+    pass
+
+
+# Database model, database table inferred from class name
+class Comment(CommentBase, table=True):
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    created_at: datetime | None = Field(
+        default_factory=get_datetime_utc,
+        sa_type=DateTime(timezone=True),  # type: ignore
+    )
+    item_id: uuid.UUID = Field(
+        foreign_key="item.id", nullable=False, ondelete="CASCADE"
+    )
+    author_id: uuid.UUID = Field(
+        foreign_key="user.id", nullable=False, ondelete="CASCADE"
+    )
+    item: Item | None = Relationship(back_populates="comments")
+    author: User | None = Relationship(back_populates="comments")
+
+
+# Properties to return via API, id is always required
+class CommentPublic(CommentBase):
+    id: uuid.UUID
+    item_id: uuid.UUID
+    author_id: uuid.UUID
+    author_name: str | None = None
+    created_at: datetime | None = None
+
+
+class CommentsPublic(SQLModel):
+    data: list[CommentPublic]
     count: int
 
 
