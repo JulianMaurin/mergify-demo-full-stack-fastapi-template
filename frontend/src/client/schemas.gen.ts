@@ -57,6 +57,91 @@ export const Body_login_login_access_tokenSchema = {
     title: 'Body_login-login_access_token'
 } as const;
 
+export const CommentCreateSchema = {
+    properties: {
+        content: {
+            type: 'string',
+            maxLength: 1000,
+            minLength: 1,
+            title: 'Content'
+        }
+    },
+    type: 'object',
+    required: ['content'],
+    title: 'CommentCreate'
+} as const;
+
+export const CommentPublicSchema = {
+    properties: {
+        content: {
+            type: 'string',
+            maxLength: 1000,
+            minLength: 1,
+            title: 'Content'
+        },
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        item_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Item Id'
+        },
+        author_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Author Id'
+        },
+        author_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Author Name'
+        },
+        created_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Created At'
+        }
+    },
+    type: 'object',
+    required: ['content', 'id', 'item_id', 'author_id'],
+    title: 'CommentPublic'
+} as const;
+
+export const CommentsPublicSchema = {
+    properties: {
+        data: {
+            items: {
+                '$ref': '#/components/schemas/CommentPublic'
+            },
+            type: 'array',
+            title: 'Data'
+        },
+        count: {
+            type: 'integer',
+            title: 'Count'
+        }
+    },
+    type: 'object',
+    required: ['data', 'count'],
+    title: 'CommentsPublic'
+} as const;
+
 export const HTTPValidationErrorSchema = {
     properties: {
         detail: {
